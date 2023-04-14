@@ -15,8 +15,12 @@ token = os.getenv("TOKEN")
 # chat_id = 620090788
 MSK = zoneinfo.ZoneInfo("Europe/Moscow")
 scheduler = BlockingScheduler()
-con = sqlite3.connect("sqlite.db")
-cursor = con.cursor()
+
+
+def connect_db():
+    con = sqlite3.connect("sqlite.db")
+    cursor = con.cursor()
+    return cursor
 
 
 def alarm(chat_id, name):
@@ -26,6 +30,7 @@ def alarm(chat_id, name):
 
 
 def wake_up(update, context):
+    cursor = connect_db()
     # В ответ на команду /start
     # будет отправлено сообщение 'Спасибо, что включили меня'
     chat = update.effective_chat
@@ -34,13 +39,18 @@ def wake_up(update, context):
     context.bot.send_message(
         chat_id=chat_id, text="Спасибо, что включили меня, {}!".format(name)
     )
-    scheduler.add_job(
-        alarm,
-        "date",
-        run_date=dt.datetime(2023, 4, 5, 18, 50, 0, tzinfo=MSK),
-        args=[chat_id, name],
-        id="alarm_1",
+    cursor.execute(
+        "SELECT date, name, work FROM cleaning WHERE name=?", (name,)
     )
+    jobs = cursor.fetchall()
+    for job in jobs:
+        scheduler.add_job(
+            alarm,
+            "date",
+            run_date=dt.datetime(2023, 4, 11, 18, 50, 0, tzinfo=MSK),
+            args=[chat_id, name],
+            id="alarm_1",
+        )
     scheduler.start()
 
 
@@ -49,7 +59,6 @@ def wake_up(update, context):
 # и передавать их в функцию wake_up()
 def main():
     updater = Updater(token=token)
-
     updater.dispatcher.add_handler(CommandHandler("start", wake_up))
     updater.start_polling()
     updater.idle()
