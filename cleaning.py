@@ -30,6 +30,20 @@ def alarm(chat_id, name):
 
 
 def wake_up(update, context):
+    chat = update.effective_chat
+    name = update.message.chat.first_name
+    chat_id = chat.id
+    buttons = ReplyKeyboardMarkup(
+        [["Включить уведомления", "Работы на этой неделе"], ["/random_digit"]]
+    )
+    context.bot.send_message(
+        chat_id=chat_id,
+        text="Привет, {}, я готов к работе;)".format(name),
+        reply_markup=buttons,
+    )
+
+
+def wake(update, context):
     cursor = connect_db()
     # В ответ на команду /start
     # будет отправлено сообщение 'Спасибо, что включили меня'
@@ -60,6 +74,7 @@ def wake_up(update, context):
 def main():
     updater = Updater(token=token)
     updater.dispatcher.add_handler(CommandHandler("start", wake_up))
+    # updater.dispatcher.add_handler(CommandHandler("start", wake))
     updater.start_polling()
     updater.idle()
 
